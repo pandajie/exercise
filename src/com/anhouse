@@ -1,0 +1,326 @@
+spring:
+  application:
+    name: common-api
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration #去掉Spring rabbitmq配置加载
+  datasource:
+    paas:
+      driver-class-name: com.mysql.jdbc.Driver
+      url: jdbc:mysql://${MYSQL_ONLINE_HOST}$:${MYSQL_ONLINE_PORT}$/dcloud_pack_paas_xuhui_db?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&rewriteBatchedStatements=false
+      username: ${MYSQL_DCLOUD_PACK_PAAS_XUHUI_ADMIN_USERNAME}$
+      password: ${MYSQL_DCLOUD_PACK_PAAS_XUHUI_ADMIN_PASSWORD}$
+      initialSize: 5
+      minIdle: 5
+      maxActive: 20
+      numTestsPerEvictionRun: 20
+      maxWait: 60000
+      timeBetweenEvictionRunsMillis: 55000
+      minEvictableIdleTimeMillis: 300000
+      validationQuery: SELECT 1
+      testWhileIdle: true
+      testOnBorrow: true
+      testOnReturn: false
+      poolPreparedStatements: true
+      maxPoolPreparedStatementPerConnectionSize: 20
+      filters: stat,slf4j
+      connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=1000
+      connection-init-sqls: ["SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"]
+
+  #cache
+  cache:
+    type: ehcache
+    ehcache:
+      config: classpath:/ehcache.xml
+
+  jpa:
+      database: MYSQL
+      properties:
+        hibernate:
+          dialect: org.hibernate.dialect.MySQL5Dialect
+          ddl.auto: false
+          format_sql: true
+          use_sql_comments: false
+          generate_statistics: false
+          show_sql: false
+          cacheable: false
+          cache:
+            use_query_cache: false
+            use_second_level_cache: false
+            provider_class: org.hibernate.cache.NoCacheProvider
+      show-sql: false
+
+  messages:
+    basename: i18n/messages
+    encoding: UTF-8
+
+  jackson:
+    mapper:
+      USE_ANNOTATIONS: true
+
+  redis:
+    database: 10
+    host: g1-redis.a.dcloud.com
+    port: 6379
+    password:
+    pool:
+      lettuce:
+        max-active: 8
+        max-wait: -1
+        max-idle: 8
+        min-idle: 0
+    timeout: 5000
+
+  aop:
+    proxy-target-class: true
+
+  boot:
+    admin:
+      url: http://actuator.a.pa.com
+      client:
+        prefer-ip: true
+
+  ##kafka相关配置
+  kafka:
+    enable: true
+    bootstrap-servers: g2-kafka01.a.dcloud.com:9092,g2-kafka02.a.dcloud.com:9092,g2-kafka03.a.dcloud.com:9092
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      group-id: paastest
+      max-poll-records: 1  ##一次拉取一条消息保证消息优先级
+      auto-commit-interval-ms: 10000
+      enable-auto-commit: true
+    producer:
+      add-type-info-headers: false
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    profix: xuhui_
+  main:
+    allow-bean-definition-overriding: true
+
+##etcd
+etcd:
+  endpoints: https://g1-etcd01.a.dcloud.com:2379,https://g1-etcd02.a.dcloud.com:2379,https://g1-etcd03.a.dcloud.com:2379
+  lock:
+    lockName: /lock/tasklock
+
+##es
+## 开启增量全量的job(使用时web端(module)设置为关闭设为false，批量任务batch端(module)开启设为true,默认false)
+cloud:
+  es:
+    enableJob: true
+  #es集群名称(es的host可以对应多个集群，各个集群是以集群名字划分开的)
+    clusterName: searchcloud
+  #es集群ip
+    hosts: ["g1-es01.a.dcloud.com","g1-es02.a.dcloud.com","g1-es03.a.dcloud.com"]
+  # es http协议端口号
+    port: 19300
+
+# 用户中心
+management:
+  health:
+    defaults: false
+    solr:
+      enabled: false
+    mail:
+      enabled: false
+    redis:
+      enabled: false
+  server:
+    address: 127.0.0.1
+    servlet:
+      context-path: /actuator
+  endpoint:
+    flyway:
+      enabled: true
+    shutdown:
+      enabled: true
+  info:
+    git:
+      mode: full
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+
+# 服务器tomcat
+server:
+  tomcat:
+    max-threads: 200
+    min-spare-threads: 50
+
+## 日志
+logging:
+  config: classpath:logback-spring.xml
+  path: ./logs
+
+## 德鲁伊
+druid:
+    monitor:
+      username: root
+      password: 123456
+
+## 用户中心RPC
+standard:
+    modules:
+        account:
+          channel: 1
+          rpc:
+            url: http://xhuc.s.dcloud.com/rpc
+          jwt:
+            sign: true
+            algorithm: HS256
+            secret: ~7^a&1bBER1c
+            expiresTimeout: 600
+          subscribe:
+            channel: 0
+
+# 短信
+rpc:
+  platform:
+    url: http://open2.st.anhouse.com.cn
+    jsonrpc: 2.0
+    successCode: "0"
+    defaultErrorMessage: rpc.request.error
+    privateKey: EI38CyKWDOurPyzPn3xtt5oas06Griap
+    token: dichanyun.docmentplatform
+  search:
+    cloud:
+      url: http://search-dcloud.s.dcloud.com/rpc
+      cluster:
+        name: default_es
+
+server.port: 7000
+#cookie 域名及名称设置，与用户中心保持一致
+cookie:
+  domain: an2.anhouse.cn
+  name: SESSION-ACCOUNT-B
+
+
+# ---<!!ST环境地址!!>--
+gov.common.toolkit.sms.openapi.url: http://open2.st.anhouse.com.cn
+#
+#联系王昌胜(EX-WANGCHANGSHENG001)申请 ,一定不能用目前这个，GA环境一定会出问题！！
+gov.common.toolkit.sms.openapi.privateKey: EI38CyKWDOurPyzPn3xtt5oas06Griap
+#
+#联系王昌胜(EX-WANGCHANGSHENG001)申请 ,一定不能用目前这个，GA环境一定会出问题！！
+gov.common.toolkit.sms.openapi.token: dichanyun.docmentplatform
+#
+#每个项目是不一样的，可以写当前项目的名称
+gov.common.toolkit.sms.openapi.clientId: paas
+
+
+
+###i18
+spring.messages.basename: i18n/messages
+spring.messages.cache-seconds: 3600
+spring.messages.encoding: UTF-8
+spring.mvc.locale: zh_CN
+spring.mvc.locale-resolver: fixed
+spring.mvc.throw-exception-if-no-handler-found: true
+
+
+
+img.url : http://xhi.an2.anhouse.cn/common/api/file/read/
+img.file.url : https://filev2d.an2.anhouse.cn
+
+# 注册地址
+register.address: https://xhi.an2.anhouse.com.cn/h5/index.html
+
+
+#App-Msg-Push相关
+# ---<!!GA环境URL地址!!>--
+#gov.common.toolkit.app-msg-push=http://open2.pinganfang.com
+# ---<!!ST环境地址!!>--
+gov.common.toolkit.app-msg-push.serverUrl: http://open2.an2.anhouse.cn
+gov.common.toolkit.app-msg-push.token: dichanyun.docmentplatform
+gov.common.toolkit.app-msg-push.privateKey: JyNle0mZewT3z693wFpstJNsX98g1GUJ
+# ---<!!代理仅能用在本地，一定不能放在GA环境或者ST环境!!>--
+#gov.common.toolkit.app-msg-push.enableProxy=true
+#gov.common.toolkit.app-msg-push.proxyHost=10.59.74.70
+#gov.common.toolkit.app-msg-push.proxyPort=80
+gov.common.toolkit.elect.appName: common-web-ga
+
+
+#dict
+master.city.url: http://master-mgr.an2.anhouse.cn/master-city/open/master/region/city
+master.district.url: http://master-mgr.an2.anhouse.cn/master-city/master/region/district
+master.block.url: http://master-mgr.an2.anhouse.cn/master-city/master/region/block
+master.token: inner
+
+#0 .协建 1.运维 2.FM,消息推送配置
+#0 .协建 1.运维 2.FM,消息推送配置
+common.web.message.push: false
+common.web.message.push.configs:
+  systems:
+    - system : 0
+      appId : 5cf4852100254f027f5e7867
+      templateId : CK_PAYJ_FW_001
+      senderId : V_PAMIP_PAYJ_001
+    - system : 1
+      appId : 5c9de509d01fb97a86a395c4
+      templateId : CK_PASO_FW_001
+      senderId : V_PAMIP_PASO_001
+    - system : 2
+      appId : 5cede462d01fb92d3d2bc1f5
+      templateId : CK_PA_FM_FW_001
+      senderId : V_PAMIP_PA_FM_001
+
+workflow.properties.openkey: E6641B61790860C9 #anhouse
+workflow.properties.appid: 657 #anhouse
+workflow.properties.workflowpre: http://workflow.an2.anhouse.cn #anhouse
+
+
+
+gov.common.toolkit.security.fake: true
+#加签验签相关
+#秘钥
+gov.common.toolkit.security.sign.secret: secret-haha
+#是否启用签名验证，如果不启用，则只会打印前后端的签名等信息
+gov.common.toolkit.security.sign.enable: true
+#前后端时间差(秒) 默认300s
+gov.common.toolkit.security.sign.client-server-timestamp-diff: 300
+
+
+
+
+#
+#分布式文件服务
+gov.file-service.channel: 1
+#RPC地址,请询问相关联系人
+#开发环境 http://30.76.226.204:8285/node/rpc
+#st15 http://filev2u.st15.anhouse.com.cn/node/rpc
+#anhouse http://filev2u.an2.anhouse.cn/node/rpc
+#ga http://upload-file.pinganut.com/node/rpc
+gov.file-service.rpc.url: http://filev2u.s.dcloud.com/rpc
+#是否加密
+gov.file-service.sign.sign: true
+#加密算法
+gov.file-service.sign.algorithm: HS256
+#加密秘钥
+gov.file-service.sign.secret: 8^a&1~7BER1c
+gov.file-service.sign.expiresTimeout: 3600
+gov.file-service.appid: d671d62a1d46
+gov.file-service.public.downloadurl: http://filev2d.s.dcloud.com
+
+
+common.web.member.update.enable: true
+common.web.member.update.cron: 0 0/1 * * * ?
+
+app.version.control.rpc.url: http://cms-service.d.pa.com/?access_token=265eaf0c9cb197e51b791f8a127b6f25
+app.typeid: 24
+
+
+#加密算法,只支持AES,SM4,BlowFish,只能是这三个中的一个
+gov.common.toolkit.security.sensitive.symmetric: AES
+#key必须为加密之后的
+gov.common.toolkit.security.sensitive.key: =EFLDCNUczgVA7kuMIL5sm/dlUIbbgmAbUCNjZAC3rJV
+gov.common.toolkit.security.sensitive.first.enable: true
+
+
+common.web.xuhui.url: http://140.207.81.78:9995/XH/
+common.web.xuhui.companyId: 1
+common.web.xuhui.companyUserId: 31053
+
+common.web.xuhui.loginParam: loginName=yanglin02,userPwd=dsqyzwb6
+youzhu.invite.register.address: https://youzhu.pauct.com/baseplat/user/register
